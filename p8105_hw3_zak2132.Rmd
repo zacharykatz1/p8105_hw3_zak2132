@@ -10,13 +10,25 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Load packages
 library(tidyverse)
+library(lubridate)
+library(viridis)
 
-# Set global options for embedding plots
+# Set global options for embedding plots and choosing themes
 knitr::opts_chunk$set(
-      fig.width = 6,
-      fig.asp = 0.6,
-      out.width = "90%"
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
 )
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
 ```
 
 ## Problem 1
@@ -30,7 +42,7 @@ data("instacart")
 
 Before answering the questions formulated as part of Problem 1, let's examine the tibble in its current form and make sure it's tidy.
 
-```{r}
+```{r examine instacart df}
 # Examine head and tail of `instacart` df
 head(instacart) %>% knitr::kable()
 tail(instacart) %>% knitr::kable()
@@ -46,3 +58,114 @@ Instacart is an online service that allows grocery shopping from local stores. T
 For each observation, `r ncol(instacart)` variables are represented; our examination of the data set above indicates that there are no missing values. The full set of variables included is: `r names(instacart)`. Each of these variables operates as follows:
 
 `order_id`, `product_id`, `user_id`, `product_name`, `department_id`, `department`, `aisle_id`, and `aisle` are identifiers of the order, product, product's department, and user. `add_to_cart_order`, `order_number`, `order_dow`, `order_hour_of_day`, `days_since_prior_order` indicate when orders were placed in the cart and ordered both absolutely in time and relative to other orders. `reordered` is an indicator that is 1 if a product has been ordered by the user in the past, while `eval_set` indicates that all orders in this data set are part of the "train" evaluation set.
+
+Let's clean our tibble to be a bit clearer:
+
+```{r clean instacart df}
+instacart = instacart %>% 
+      # Remove and rearrange certain columns
+      select(-eval_set) %>% 
+      select (order_id, product_id, user_id, everything()) %>% 
+      # Recode certain variables
+      mutate(reordered = as.logical(reordered))
+```
+
+Now, we can start answer the following questions:
+
+#### How many aisles are there, and which aisles are the most items ordered from?
+
+To determine the number of unique aisles, we calculate as follows:
+
+```{r calculate unique aisles}
+num_aisles = length(unique(pull(instacart, aisle)))
+```
+
+There are `r num_aisles` in total.
+
+Now, let's see which ones have the most items ordered from them. To determine the aisles with the most items ordered from them, we want to sort the aisles in descending order of observations in that aisle. 
+
+```{r calculate aisles with highest number of items ordered}
+# Group by aisle and summarize number of observations in descending order
+orders_by_aisle = instacart %>% 
+      group_by(aisle) %>% 
+      summarize(n_obs = n()) %>% 
+      arrange(desc(n_obs)) 
+
+# Check out the top 5 aisles by number of observations in table form
+orders_by_aisle %>% 
+      head(5) %>% 
+      knitr::kable()
+```
+
+From the table, we can tell that fresh vegetables and fresh fruits are the two aisles with the most items ordered, with over 150,000 observations each.
+
+We can create a plot to show the number of items ordered in each aisle, limited to aisles with more than 10,000 items ordered.
+
+```{r create plot of number of items ordered by aisle}
+orders_by_aisle %>% 
+      # Filter observations
+      filter(n_obs > 10000) %>% 
+      # Relevel aisles as factor by number of observations
+      mutate(aisle = forcats::fct_reorder(aisle, n_obs)) %>% 
+      ggplot(aes(
+            x = aisle,
+            y = n_obs)
+      ) + 
+      geom_bar(stat = "identity") + 
+      # Flip X and Y axes
+      coord_flip() + 
+      # Label graph
+      labs(
+            title = "Number of items ordered per aisle",
+            y = "Number of items ordered",
+            x = "Product aisle",
+            caption = "Note: only includes aisles with >10K items ordered"
+      )
+```
+
+Additionally, we'd like to create a table showing the three most popular items in each of the following aisles: "baking ingredients," "dog food care," and "packaged vegetables fruits." We should also include in our table the number of times each item is ordered.
+
+```{r table showing most popular items in given aisles}
+instacart %>% 
+      # Filter for appropriate aisles and group by aisle and product name
+      filter(aisle == "baking ingredients" | aisle == "dog food care" | aisle == "packaged vegetables fruits") %>% 
+      group_by(aisle, product_name) %>% 
+      summarize(n_obs = n()) %>% 
+      # Determine rank for product in each aisle by number of observations
+      mutate(
+            product_rank = min_rank(desc(n_obs))
+      ) %>% 
+      filter(product_rank < 4) %>% 
+      # Arrange table by aisle and then product rank by # of obs
+      arrange(aisle, product_rank) %>% 
+      rename(num_orders = n_obs) %>% 
+      knitr::kable()
+```
+
+Finally, let's create a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week. Let's have one row for apples and another for coffee, and seven columns representing each day of the week. The value for each cell should represent the mean hour of the day in which the product is ordered.
+
+```{r table showing mean hour for apples and coffee}
+instacart %>% 
+      select(product_name, order_dow, order_hour_of_day) %>% 
+      filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+      group_by(product_name, order_dow) %>% 
+      summarize(
+            mean_hour = sum(order_hour_of_day) / n()
+      ) %>% 
+      pivot_wider(
+            names_from = "order_dow",
+            values_from = "mean_hour"
+      ) %>% 
+      rename(
+            "Sunday" = "0",
+            "Monday" = "1",
+            "Tuesday" = "2",
+            "Wednesday" = "3",
+            "Thursday" = "4",
+            "Friday" = "5",
+            "Saturday" = "6"
+      ) %>% 
+      knitr::kable()
+```
+
+
