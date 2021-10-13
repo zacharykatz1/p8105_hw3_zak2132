@@ -70,9 +70,7 @@ instacart = instacart %>%
       mutate(reordered = as.logical(reordered))
 ```
 
-Now, we can start answer the following questions:
-
-#### How many aisles are there, and which aisles are the most items ordered from?
+Now, we can start answer questions like: How many aisles are there, and which aisles are the most items ordered from?
 
 To determine the number of unique aisles, we calculate as follows:
 
@@ -145,17 +143,20 @@ instacart %>%
 Finally, let's create a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week. Let's have one row for apples and another for coffee, and seven columns representing each day of the week. The value for each cell should represent the mean hour of the day in which the product is ordered.
 
 ```{r table showing mean hour for apples and coffee}
-instacart %>% 
+instacart %>%
+      # Select pink lady apples and coffee ice cream, then group by product and day of week
       select(product_name, order_dow, order_hour_of_day) %>% 
       filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
       group_by(product_name, order_dow) %>% 
+      # Summarize mean for each group
       summarize(
-            mean_hour = sum(order_hour_of_day) / n()
+            mean_hour = mean(order_hour_of_day)
       ) %>% 
       pivot_wider(
             names_from = "order_dow",
             values_from = "mean_hour"
-      ) %>% 
+      ) %>%
+      # Recode column names as days of the week
       rename(
             "Sunday" = "0",
             "Monday" = "1",
@@ -168,4 +169,112 @@ instacart %>%
       knitr::kable()
 ```
 
+## Problem 2
 
+For problem 2, we use BRFSS data, so let's load it in and check it out.
+
+```{r load and examine brfss data}
+# Load the data
+data("brfss_smart2010")
+
+# Examine head and tail of `brfss_smart2010` df
+head(brfss_smart2010) %>% knitr::kable()
+tail(brfss_smart2010) %>% knitr::kable()
+
+# Examine structure, summary, and skim
+str(brfss_smart2010)
+summary(brfss_smart2010)
+skimr::skim(brfss_smart2010)
+```
+
+The BRFSS data set, or Behavioral Risk Factors Surveillance System, is intended to enable analysis of metropolitan area risk trends for selected counties. Data is collected from a continuous system that tracks modifiable risk factors for chronic diseases and other leading causes of death.
+
+Our data set contains `r nrow(brfss_smart2010)` observations and `r ncol(brfss_smart2010)` variables. Let's start to tidy it up a bit and drill down towards what we're interested in examining.
+
+```{r tidy the brfss data}
+brfss_smart2010 = brfss_smart2010 %>% 
+      # Clean variable names
+      janitor::clean_names() %>% 
+      rename(
+            "state" = "locationabbr",
+            "county" = "locationdesc"
+      ) %>% 
+      # Drop columns full of missing values or that do not provide information of value
+      select(-data_value_footnote_symbol, -data_value_footnote, -location_id, -data_source) %>% 
+      # Focus on "Overall Health" topic
+      filter(topic == "Overall Health") %>% 
+      # Include only responses from "Excellent" to "Poor" %>% 
+      filter(response %in% c("Excellent", "Very good", "Good", "Fair", "Poor")) %>% 
+      # Organize responses as a factor taking levels ordered from "Poor" to "Excellent"
+      mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
+```
+
+Having tidied our data set a bit, we can begin to answer a few questions. For example, in 2002, which states were observed at 7 or more locations? What about in 2010?
+
+```{r states with 7+ observations}
+# Filter for 2002, group by state, and sum the number of unique locations observed
+brfss_smart2010 %>% 
+      filter(year == 2002) %>% 
+      group_by(state) %>% 
+      summarize(locations_observed = length(unique(county))) %>% 
+      filter(locations_observed >= 7) %>% 
+      arrange(desc(locations_observed)) %>% 
+      knitr::kable()
+
+# Repeat for 2010
+brfss_smart2010 %>% 
+      filter(year == 2010) %>% 
+      group_by(state) %>% 
+      summarize(locations_observed = length(unique(county))) %>% 
+      filter(locations_observed >= 7) %>% 
+      arrange(desc(locations_observed)) %>% 
+      knitr::kable()
+```
+
+The states that were observed at 7 or more locations in 2002 were PA, MA, NJ, CT, FL, and NC. The states that were observed at 7 or more locations in 2010 were FL, NJ, TX, CA, MD, NC, NE, WA, MA, NY, OH, CO, PA, and SC -- significantly more than in 2002!
+
+We'd also like to get a better understanding of how the average `data_value` across locations within each state changed over time for responses labeled as "Excellent."
+
+```{r spaghetti plot change in data_value over time by state}
+brfss_smart2010 %>% 
+      # Filter and group
+      filter(response == "Excellent") %>% 
+      group_by(state, year) %>% 
+      # Create new summary measure
+      summarize(
+            mean_data_value = mean(data_value)
+      ) %>% 
+      # Develop spaghetti plot
+      ggplot(aes(x = year, y = mean_data_value, color = state)) + 
+      geom_line(alpha = 0.4) + 
+      geom_point(alpha = 0.4) + 
+      labs(
+            title = "Average data value for excellent responses over time by state",
+            x = "Year",
+            y = "Mean data value"
+      ) + 
+      theme(legend.position = "right")
+```
+
+Finally, we can also create a two-panel plot showing, for 2006 and 2010, the distribution of `data_value` for responses ("Poor" to "Excellent") among locations in the state of New York.
+
+```{r Two-panel plot showing distribution of data value for NYS}
+brfss_smart2010 %>% 
+      filter(
+            year == 2006 | year == 2010,
+            state == "NY"
+      ) %>% 
+      # Choose necessary columns
+      select(year, response, data_value) %>% 
+      ggplot(aes(x = response, y = data_value)) + 
+      geom_boxplot(aes(fill = response), alpha = 0.5) + 
+      theme(legend.position = "none") + 
+      facet_grid(~year) + 
+      labs(
+            title = "Distribution of `data_value` by response in NY, 2006 vs 2010",
+            x = "Response category",
+            y = "Data Value"
+      )
+```
+
+There are a couple of interesting trends observable in this plot. The first is the backwards-bending curve which shows "excellent" responses generally receiving lower data value scores than "good" and "very good" responses. Another is the general increase in data value from 2006 and 2010 for the "very good" response category in New York state.
