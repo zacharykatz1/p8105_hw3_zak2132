@@ -309,7 +309,7 @@ accel_df = accel_df %>%
       mutate(
             "type_of_day" = 
                   ifelse(
-                        "day_of_week" %in% c("Saturday", "Sunday"), "Weekend",
+                        day_of_week %in% c("Saturday", "Sunday"), "Weekend",
                         "Weekday"
                   )
       ) %>% 
@@ -338,5 +338,71 @@ skimr::skim(accel_df)
 ```
 
 Everything looks as expected! Now let's aggregate across minutes to create a total activity variable for each day, and then create a table showing these totals.
+
+```{r total daily activity table}
+total_daily = accel_df %>% 
+      group_by(day_id) %>% 
+      summarize(
+            total_daily_activity = sum(activity_count)
+      )
+
+# Don't pipe in, because will reuse `total_daily` in a little while
+total_daily %>% 
+      knitr::kable()
+```
+
+We note that on some days, such as on days 24 and 31, the total_daily_activity is much lower than on other days. But we get this just by eyeballing the table; can we construct another summary column indicating how far each day's total activity deviates from the mean across days?
+
+```{r daily activity with deviation from mean}
+# Create a column that normalizes on `total_daily_activity`
+total_daily_deviation = total_daily %>% 
+      mutate(
+            deviation = (total_daily_activity - mean(total_daily_activity)) / sd(total_daily_activity)) %>% 
+      filter(abs(deviation) > 1.5)
+```
+
+We see here a couple of outliers, on days 24 and 31, that are 2.34 standard deviations below the mean. Interestingly, the `total_daily_activity` on these days is identical, at 1440. Notably, we know from the original tibble that days 24 and 31 are Saturdays. Day 2 is also pretty low; that's a Monday.
+
+We can also check to see if weekend days have a generally lower daily activity average than weekdays, and indeed they do.
+
+```{r average daily activity weekend vs weekday}
+# Create table of average daily activity, grouping by weekday or weekend
+accel_df %>% 
+      group_by(type_of_day) %>% 
+      summarize(
+           average_daily_activity = mean(activity_count)
+      ) %>% 
+      knitr::kable()
+```
+
+Finally, let's make a plot that shows the 24-hour activity time course for each day.
+
+```{r 24h time course per day}
+# Create spaghetti plot showing 24h activity by minute for each day_id, colored by day of week
+ggplot(data = accel_df, aes(x = minute_id, y = activity_count, group = day_id, color = day_of_week)) + 
+      geom_line(alpha = 0.5) + 
+      geom_point(alpha = 0.5) + 
+      labs(
+            x = "Minute of day",
+            y = "Activity count",
+            title = "Activity by minute per day",
+            color = "Day of week"
+      ) + 
+      theme(legend.position = "right")
+```
+
+It's difficult to discern distinct patterns or draw certain conclusions from this graph, which shows perhaps too many data points. We could possibly say that this individual has an unusually high amount of activity on Friday evenings and on Sunday around the middle of the day, as well as an unusually low amount of activity every day of the week until several hours into the morning. 
+
+I would prefer to group by day of week first and then find the mean at a given minute during the day, and plot that over time, like so:
+
+```{r 24h time course but grouped and averaged by day of week}
+accel_df %>% 
+      group_by(day_of_week, minute_id) %>% 
+      summarize(
+            mean_per_minute = mean(activity_count)
+      ) %>% 
+      ggplot(aes(x = minute_id, y = mean_per_minute, color = day_of_week)) + 
+      geom_line(alpha = 0.8)
+```
 
 
