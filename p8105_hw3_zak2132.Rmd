@@ -1,0 +1,14 @@
+---
+title: "P8105: Homework #3"
+author: "Zachary Katz (UNI: zak2132)"
+date: "10/20/2021"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 1
+
+TKTK
