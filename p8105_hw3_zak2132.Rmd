@@ -7,8 +7,42 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages
+library(tidyverse)
+
+# Set global options for embedding plots
+knitr::opts_chunk$set(
+      fig.width = 6,
+      fig.asp = 0.6,
+      out.width = "90%"
+)
 ```
 
 ## Problem 1
 
-TKTK
+First, we'd like to conduct some exploratory analysis of the `instacart` dataset. Our initial step is to load the data as follows:
+
+```{r load instacart data into data frame}
+library(p8105.datasets)
+data("instacart")
+```
+
+Before answering the questions formulated as part of Problem 1, let's examine the tibble in its current form and make sure it's tidy.
+
+```{r}
+# Examine head and tail of `instacart` df
+head(instacart) %>% knitr::kable()
+tail(instacart) %>% knitr::kable()
+
+# Examine structure, summary, and skim
+str(instacart)
+summary(instacart)
+skimr::skim(instacart)
+```
+
+Instacart is an online service that allows grocery shopping from local stores. This data frame represents `r nrow(instacart)` observations, where each row in the tibble is a product from a given user's order. This dataset has already been cleaned such that there is only one order per user included here. In total, this data contains product order information for `r length(unique(pull(instacart, user_id)))` unique users.
+
+For each observation, `r ncol(instacart)` variables are represented; our examination of the data set above indicates that there are no missing values. The full set of variables included is: `r names(instacart)`. Each of these variables operates as follows:
+
+`order_id`, `product_id`, `user_id`, `product_name`, `department_id`, `department`, `aisle_id`, and `aisle` are identifiers of the order, product, product's department, and user. `add_to_cart_order`, `order_number`, `order_dow`, `order_hour_of_day`, `days_since_prior_order` indicate when orders were placed in the cart and ordered both absolutely in time and relative to other orders. `reordered` is an indicator that is 1 if a product has been ordered by the user in the past, while `eval_set` indicates that all orders in this data set are part of the "train" evaluation set.
