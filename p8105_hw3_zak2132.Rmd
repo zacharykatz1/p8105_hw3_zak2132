@@ -78,7 +78,7 @@ To determine the number of unique aisles, we calculate as follows:
 num_aisles = length(unique(pull(instacart, aisle)))
 ```
 
-There are `r num_aisles` in total.
+There are `r num_aisles` aisles in total.
 
 Now, let's see which ones have the most items ordered from them. To determine the aisles with the most items ordered from them, we want to sort the aisles in descending order of observations in that aisle. 
 
@@ -86,8 +86,8 @@ Now, let's see which ones have the most items ordered from them. To determine th
 # Group by aisle and summarize number of observations in descending order
 orders_by_aisle = instacart %>% 
       group_by(aisle) %>% 
-      summarize(n_obs = n()) %>% 
-      arrange(desc(n_obs)) 
+      summarize(aisle_obs = n()) %>% 
+      arrange(desc(aisle_obs)) 
 
 # Check out the top 5 aisles by number of observations in table form
 orders_by_aisle %>% 
@@ -102,17 +102,18 @@ We can create a plot to show the number of items ordered in each aisle, limited 
 ```{r create plot of number of items ordered by aisle}
 orders_by_aisle %>% 
       # Filter observations
-      filter(n_obs > 10000) %>% 
+      filter(aisle_obs > 10000) %>% 
       # Relevel aisles as factor by number of observations
-      mutate(aisle = forcats::fct_reorder(aisle, n_obs)) %>% 
+      mutate(aisle = forcats::fct_reorder(aisle, aisle_obs)) %>% 
       ggplot(aes(
             x = aisle,
-            y = n_obs)
+            y = aisle_obs)
       ) + 
-      geom_bar(stat = "identity") + 
+      geom_bar(stat = "identity", position = position_dodge(width = 0.3)) + 
       # Flip X and Y axes
       coord_flip() + 
       # Label graph
+      scale_fill_gradient(low = "grey", high = "black") + 
       labs(
             title = "Number of items ordered per aisle",
             y = "Number of items ordered",
