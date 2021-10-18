@@ -109,7 +109,7 @@ orders_by_aisle %>%
             x = aisle,
             y = aisle_obs)
       ) + 
-      geom_bar(stat = "identity", position = position_dodge(width = 0.3)) + 
+      geom_bar(stat = "identity", position = position_dodge(width = 0.9), width= 0.7) + 
       # Flip X and Y axes
       coord_flip() + 
       # Label graph
@@ -124,7 +124,7 @@ orders_by_aisle %>%
 
 Additionally, we'd like to create a table showing the three most popular items in each of the following aisles: "baking ingredients," "dog food care," and "packaged vegetables fruits." We should also include in our table the number of times each item is ordered.
 
-```{r table showing most popular items in given aisles}
+```{r table showing most popular items in given aisles, message=FALSE}
 instacart %>% 
       # Filter for appropriate aisles and group by aisle and product name
       filter(aisle == "baking ingredients" | aisle == "dog food care" | aisle == "packaged vegetables fruits") %>% 
@@ -143,7 +143,7 @@ instacart %>%
 
 Finally, let's create a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week. Let's have one row for apples and another for coffee, and seven columns representing each day of the week. The value for each cell should represent the mean hour of the day in which the product is ordered.
 
-```{r table showing mean hour for apples and coffee}
+```{r table showing mean hour for apples and coffee, message=FALSE}
 instacart %>%
       # Select pink lady apples and coffee ice cream, then group by product and day of week
       select(product_name, order_dow, order_hour_of_day) %>% 
@@ -236,7 +236,7 @@ The states that were observed at 7 or more locations in 2002 were PA, MA, NJ, CT
 
 We'd also like to get a better understanding of how the average `data_value` across locations within each state changed over time for responses labeled as "Excellent."
 
-```{r spaghetti plot change in data_value over time by state}
+```{r spaghetti plot change in data_value over time by state, message=FALSE}
 brfss_smart2010 %>% 
       # Filter and group
       filter(response == "Excellent") %>% 
@@ -246,7 +246,7 @@ brfss_smart2010 %>%
             mean_data_value = mean(data_value)
       ) %>% 
       # Develop spaghetti plot
-      ggplot(aes(x = year, y = mean_data_value, color = state)) + 
+      ggplot(aes(x = year, y = mean_data_value, group = state, color = state)) + 
       geom_line(alpha = 0.4) + 
       geom_point(alpha = 0.4) + 
       labs(
@@ -256,6 +256,8 @@ brfss_smart2010 %>%
       ) + 
       theme(legend.position = "right")
 ```
+
+The mean data value fluctuates quite a bit over time and across states.
 
 Finally, we can also create a two-panel plot showing, for 2006 and 2010, the distribution of `data_value` for responses ("Poor" to "Excellent") among locations in the state of New York.
 
@@ -359,10 +361,11 @@ We note that on some days, such as on days 24 and 31, the total_daily_activity i
 total_daily_deviation = total_daily %>% 
       mutate(
             deviation = (total_daily_activity - mean(total_daily_activity)) / sd(total_daily_activity)) %>% 
-      filter(abs(deviation) > 1.5)
+      filter(abs(deviation) > 1.5) %>% 
+  knitr::kable()
 ```
 
-We see here a couple of outliers, on days 24 and 31, that are 2.34 standard deviations below the mean. Interestingly, the `total_daily_activity` on these days is identical, at 1440. Notably, we know from the original tibble that days 24 and 31 are Saturdays. Day 2 is also pretty low; that's a Monday.
+We see here a couple of outliers -- namely, days 24 and 31 -- that are 2.34 standard deviations below the mean. Interestingly, the `total_daily_activity` on these days is identical, at 1440. Notably, we know from the original tibble that days 24 and 31 are Saturdays. Day 2 is also pretty low; that's a Monday.
 
 We can also check to see if weekend days have a generally lower daily activity average than weekdays, and indeed they do.
 
@@ -392,11 +395,11 @@ ggplot(data = accel_df, aes(x = minute_id, y = activity_count, group = day_id, c
       theme(legend.position = "right")
 ```
 
-It's difficult to discern distinct patterns or draw certain conclusions from this graph, which shows perhaps too many data points. We could possibly say that this individual has an unusually high amount of activity on Friday evenings and on Sunday around the middle of the day, as well as an unusually low amount of activity every day of the week until several hours into the morning. 
+It's difficult to discern distinct patterns or draw certain conclusions from this graph, which shows perhaps too many data points. We could possibly say that this individual has an unusually high amount of activity on Friday evenings (~1250 minutes into the day, which is between 8pm and 9pm) and on Sunday around 800 minutes into the day (about 1-2pm), as well as an unusually low amount of activity every day of the week until several hours into the morning (~400 minutes into the day, which is between 6am and 7am). 
 
 I would prefer to group by day of week first and then find the mean at a given minute during the day, and plot that over time, like so:
 
-```{r 24h time course but grouped and averaged by day of week}
+```{r 24h time course but grouped and averaged by day of week, message=FALSE}
 accel_df %>% 
       group_by(day_of_week, minute_id) %>% 
       summarize(
