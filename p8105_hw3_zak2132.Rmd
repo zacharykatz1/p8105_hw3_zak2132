@@ -250,7 +250,7 @@ brfss_smart2010 %>%
       geom_line(alpha = 0.5, size=2) + 
       geom_point(alpha = 0.5) + 
       labs(
-            title = "Average data value for excellent responses over time by state",
+            title = "Average score for excellents by state",
             x = "Year",
             y = "Mean data value"
       ) + 
@@ -281,7 +281,7 @@ ggplot() +
   geom_line(data = all_states, aes(x = year, y = mean_data_value, group = state), color = alpha("grey", 0.7)) + 
   geom_line(data = ny_only, aes(x = year, y = mean_data_value, color = state), color = alpha("blue", 1.0), size = 2) + 
       labs(
-            title = "Average data value for excellent responses by state over time, NY vs others",
+            title = "Average score, NY vs others",
             x = "Year",
             y = "Mean data value"
       )
