@@ -247,8 +247,8 @@ brfss_smart2010 %>%
       ) %>% 
       # Develop spaghetti plot
       ggplot(aes(x = year, y = mean_data_value, group = state, color = state)) + 
-      geom_line(alpha = 0.4) + 
-      geom_point(alpha = 0.4) + 
+      geom_line(alpha = 0.5, size=2) + 
+      geom_point(alpha = 0.5) + 
       labs(
             title = "Average data value for excellent responses over time by state",
             x = "Year",
@@ -257,7 +257,37 @@ brfss_smart2010 %>%
       theme(legend.position = "right")
 ```
 
-The mean data value fluctuates quite a bit over time and across states.
+The mean data value fluctuates quite a bit over time and across states. West Virginia is a notable outlier, with lower average scores over time, especially in 2005 and 2009, compared to other states.
+
+I'm a bit curious how NY looks compared to the others on this metric, so I'll also create a graph that highlights NY's performance in particular.
+
+```{r}
+# Group for all states
+all_states = brfss_smart2010 %>% 
+      # Filter and group
+      filter(response == "Excellent") %>% 
+      group_by(state, year) %>% 
+      # Create new summary measure
+      summarize(
+            mean_data_value = mean(data_value)
+      ) 
+
+# Filter for NY specifically
+ny_only = all_states %>% 
+  filter(state == "NY")
+
+ # Develop plot
+ggplot() + 
+  geom_line(data = all_states, aes(x = year, y = mean_data_value, group = state), color = alpha("grey", 0.7)) + 
+  geom_line(data = ny_only, aes(x = year, y = mean_data_value, color = state), color = alpha("blue", 1.0), size = 2) + 
+      labs(
+            title = "Average data value for excellent responses by state over time, NY vs others",
+            x = "Year",
+            y = "Mean data value"
+      )
+```
+
+Looks like New York is right around the middle of the pack.
 
 Finally, we can also create a two-panel plot showing, for 2006 and 2010, the distribution of `data_value` for responses ("Poor" to "Excellent") among locations in the state of New York.
 
