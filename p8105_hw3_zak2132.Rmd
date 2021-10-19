@@ -427,7 +427,7 @@ ggplot(data = accel_df, aes(x = minute_id, y = activity_count, group = day_id, c
 
 It's difficult to discern distinct patterns or draw certain conclusions from this graph, which shows perhaps too many data points. We could possibly say that this individual has an unusually high amount of activity on Friday evenings (~1250 minutes into the day, which is between 8pm and 9pm) and on Sunday around 800 minutes into the day (about 1-2pm), as well as an unusually low amount of activity every day of the week until several hours into the morning (~400 minutes into the day, which is between 6am and 7am). 
 
-I would prefer to group by day of week first and then find the mean at a given minute during the day, and plot that over time, like so:
+As an aside, I would prefer to group by day of week first and then find the mean at a given minute during the day, and plot that over time, like so:
 
 ```{r 24h time course but grouped and averaged by day of week, message=FALSE}
 accel_df %>% 
@@ -436,7 +436,14 @@ accel_df %>%
             mean_per_minute = mean(activity_count)
       ) %>% 
       ggplot(aes(x = minute_id, y = mean_per_minute, color = day_of_week)) + 
-      geom_line(alpha = 0.8)
+      geom_line(alpha = 0.8) +
+      labs(
+            x = "Minute of day",
+            y = "Mean activity count",
+            title = "Activity by minute grouped by day of week",
+            color = "Day of week"
+      ) + 
+      theme(legend.position = "right")
 ```
 
 
