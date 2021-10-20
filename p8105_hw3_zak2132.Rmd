@@ -151,7 +151,7 @@ instacart %>%
       group_by(product_name, order_dow) %>% 
       # Summarize mean for each group
       summarize(
-            mean_hour = mean(order_hour_of_day)
+            mean_hour = round(mean(order_hour_of_day), 2)
       ) %>% 
       pivot_wider(
             names_from = "order_dow",
@@ -207,7 +207,8 @@ brfss_smart2010 = brfss_smart2010 %>%
       # Include only responses from "Excellent" to "Poor" %>% 
       filter(response %in% c("Excellent", "Very good", "Good", "Fair", "Poor")) %>% 
       # Organize responses as a factor taking levels ordered from "Poor" to "Excellent"
-      mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
+      mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"))) %>% 
+  distinct()
 ```
 
 Having tidied our data set a bit, we can begin to answer a few questions. For example, in 2002, which states were observed at 7 or more locations? What about in 2010?
@@ -232,7 +233,7 @@ brfss_smart2010 %>%
       knitr::kable()
 ```
 
-The states that were observed at 7 or more locations in 2002 were PA, MA, NJ, CT, FL, and NC. The states that were observed at 7 or more locations in 2010 were FL, NJ, TX, CA, MD, NC, NE, WA, MA, NY, OH, CO, PA, and SC -- significantly more than in 2002!
+The six states that were observed at 7 or more locations in 2002 were PA, MA, NJ, CT, FL, and NC. The 14 states that were observed at 7 or more locations in 2010 were FL, NJ, TX, CA, MD, NC, NE, WA, MA, NY, OH, CO, PA, and SC -- significantly more than in 2002!
 
 We'd also like to get a better understanding of how the average `data_value` across locations within each state changed over time for responses labeled as "Excellent."
 
