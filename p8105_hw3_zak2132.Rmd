@@ -312,6 +312,34 @@ brfss_smart2010 %>%
 
 There are a couple of interesting trends observable in this plot. The first is the backwards-bending curve which shows "excellent" responses generally receiving lower data value scores than "good" and "very good" responses. Another is the general increase in data value from 2006 and 2010 for the "very good" response category in New York state.
 
+In addition, we can visualize this in a couple of other ways as well, just for fun: in the following, the first method looks at density across all responses without factorizing by response, while the second method looks at density once we factorize, or group, by response.
+
+```{r other NY viz}
+# Density plot without group factors
+brfss_smart2010 %>% 
+      filter(
+            year == 2006 | year == 2010,
+            state == "NY"
+      ) %>% 
+  group_by(year) %>% 
+  ggplot(aes(x = data_value)) + 
+  geom_density() + 
+  facet_grid(~year)
+
+# Density plot with group factors
+brfss_smart2010 %>% 
+      filter(
+            year == 2006 | year == 2010,
+            state == "NY"
+      ) %>% 
+  group_by(year) %>% 
+  ggplot(aes(x = data_value, group = response, color = response)) + 
+  geom_density() + 
+  facet_grid(~year)
+```
+
+In this case, we find the extra grouping by response category to be more informative once again. In general, as we move from "poor" to "excellent," the density also tends to shift towards higher values of `data_value` -- except for "excellent" responses, which revert back towards middling values of `data_value`. From 2006 to 2010, this trend is maintained, although we generally see a very slight increase in density for higher values of `data_value`.
+
 ## Problem 3
 
 Our goal in problem 3 is to load, tidy, wrangle, and explore five weeks of accelerometer data collected from an individual admitted to the hospital and diagnosed with congestive heart failure.
